@@ -17,7 +17,7 @@ output "public_subnet_ids" {
 }
 
 # --- Private Subnet IDs ---
-# Used by EKS nodes, RDS, and MSK — all of which must stay off the public internet.
+# Used by EKS nodes, RDS, and MSK  - all of wjich must stay off the public internet.
 output "private_subnet_ids" {
   description = "IDs of the private subnets (used by EKS nodes, RDS, MSK)"
   value       = [aws_subnet.private_a.id, aws_subnet.private_b.id]

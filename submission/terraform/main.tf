@@ -39,7 +39,7 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
 # =============================================================================
 # EKS CLUSTER
 # =============================================================================
-# Nodes run in PRIVATE subnets — they have no direct internet exposure.
+# Nodes run in PRIVATE subnets and they have no direct internet exposure.
 # The control plane endpoint is accessible from within the VPC only (via ALB/VPN).
 # We enable specific log types so we can audit API calls, auth events,
 # and controller decisions in CloudWatch.
@@ -59,7 +59,7 @@ resource "aws_eks_cluster" "main" {
     # Attached the EKS node security group to the cluster.
     security_group_ids = [aws_security_group.eks_nodes.id]
 
-    # Keep the API server endpoint private — no direct public internet access.
+    # Keep the API server endpoint private with no direct public internet access.
     endpoint_private_access = true
     endpoint_public_access  = false
   }
@@ -134,7 +134,7 @@ resource "aws_iam_role_policy_attachment" "eks_ecr_readonly" {
 # =============================================================================
 # This group runs general workloads: video-processor, API gateway, Kafka consumers.
 # Instance types are a list so cost_optimization.tf can apply mixed instance / spot policies.
-# Nodes run in private subnets — they reach the internet via the NAT Gateway.
+# Nodes run in private subnets untill they reach the internet via the NAT Gateway.
 
 resource "aws_eks_node_group" "general" {
   cluster_name    = aws_eks_cluster.main.name

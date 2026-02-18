@@ -1,4 +1,4 @@
-# Made 5 changes - Added the management cidr for extra security, added one general node group and one GPU node group, added the s3 bucket names and kubernetes version checker which will not let workloads breaks unexpectedly when AWS initiates any upgrades
+# Made 5 changes - Added the management cidr for extra security, added one general node group and one GPU node group, added the S3 bucket names and kubernetes version checker which will not let workloads breaks unexpectedly when AWS initiates any upgrades
 
 
 variable "aws_region" {
