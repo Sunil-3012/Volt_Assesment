@@ -1,103 +1,23 @@
-# Incident Response: Scenario 3
+1. What’s going wrong?
+We tried to update the "Chunk Processor" app, but the new version is stuck. One of the servers is basically standing outside the door, unable to pull the new software (the Container Image). Because it can’t get the image, the update has completely stalled, and our system is running with one less worker than it should.
 
-## What is happening?
+2. Why did it happen?
+The Expired ID (The Root Cause): To download code from our private storage (ECR), the server needs a fresh digital "handshake" every 12 hours.
 
-A deployment rollout for `chunk-processor` is stuck. The rollout updated 1 out of 3 replicas before stalling. The new pod (`chunk-processor-7c8d9e0f1-new01`) has been in `ImagePullBackOff` for 15 minutes. The 3 old pods remain running, so the service is degraded (operating at 3/4 capacity) but not fully down. The rolling update cannot complete.
+The Missing Signature: Usually, we give the app a special "ID Card" (the IAM Role annotation) so it can get those handshakes automatically. We forgot to put that ID card on the app's paperwork (the ServiceAccount).
 
-## Root Cause
+Why now? Our older servers still have their "handshake" saved in their pocket from earlier today, so they are fine for now. But the new server just started and has nothing—it’s being told "access denied."
 
-**The node pulling the new image (`ip-10-0-4-55`) cannot authenticate to ECR because the ServiceAccount is missing its IRSA (IAM Roles for Service Accounts) annotation.**
+3. How do we fix it right now?
+Hand over the ID: We’ll manually add the "ID Card" (the IAM annotation) to the app's paperwork using a quick command.
 
-Evidence from `rollout_status.txt`:
+Restart the Task: We’ll tell the stuck server to try again. Now that it has the right ID, it will be able to talk to the warehouse, get the software, and start working.
 
-**Error message:**
-```
-Failed to pull image: rpc error: code = Unknown desc = Error response from daemon:
-pull access denied for ...chunk-processor, repository does not exist or may require
-'docker login': denied: Your authorization token has expired. Reauthenticate and try again.
-```
+4. How do we stop this from happening again?
+Code the ID in Permanently: We won't just do a quick fix; we’ll update our master blueprint (Terraform) so the ID card is always included from day one.
 
-`"Your authorization token has expired"` means the node tried to use an ECR auth token that is no longer valid. ECR tokens expire every **12 hours** and must be refreshed by calling `ecr:GetAuthorizationToken`.
+Early Warnings: We’re setting up an alarm that shouts at us the second a server says "I can't pull the image," instead of letting it sit there for 15 minutes.
 
-**From the ServiceAccount manifest:**
-```yaml
-metadata:
-  name: chunk-processor
-  namespace: video-analytics
-  annotations:
-    # NOTE: IAM role annotation is missing — should be:
-    # eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/chunk-processor-ecr-role
-```
+No "Test" Code in Production: We noticed this version was a "Release Candidate" (rc1). We’ll set up a rule that says only "Final" versions of our software are allowed in the production environment—no more experiments!
 
-Without the IRSA annotation, the pod's ServiceAccount has no IAM identity. The kubelet on the new node cannot call `ecr:GetAuthorizationToken` to get a fresh token — it has no permission to do so. The old pods on other nodes happen to have valid cached tokens still within the 12-hour window, which is why they are still running.
-
-**Why only the new node fails:** ECR credential caching is per-node. Old nodes cached a valid token earlier. The new node (`ip-10-0-4-55`) either never pulled from ECR or its cached token has expired. Without IRSA, it has no way to refresh.
-
-## Immediate Remediation
-
-**Step 1 — Add the IRSA annotation to the ServiceAccount:**
-
-```bash
-kubectl annotate serviceaccount chunk-processor \
-  -n video-analytics \
-  eks.amazonaws.com/role-arn=arn:aws:iam::123456789012:role/chunk-processor-ecr-role
-```
-
-**Step 2 — Delete the stuck pod so it reschedules with the corrected ServiceAccount:**
-
-```bash
-kubectl delete pod chunk-processor-7c8d9e0f1-new01 -n video-analytics
-```
-
-The deployment controller will immediately create a replacement pod. This time the kubelet will use the IRSA-injected credentials to get a fresh ECR token.
-
-**Step 3 — Watch the rollout resume:**
-
-```bash
-kubectl rollout status deployment/chunk-processor -n video-analytics
-kubectl get pods -n video-analytics -l app=chunk-processor -w
-```
-
-**Step 4 — If the IAM role itself doesn't exist yet, create it:**
-
-The role `chunk-processor-ecr-role` needs:
-- Trust policy allowing the ServiceAccount to assume it (OIDC federation)
-- Permission: `ecr:GetAuthorizationToken` + `ecr:BatchGetImage` + `ecr:GetDownloadUrlForLayer`
-
-```bash
-# Verify the role exists and has ECR permissions:
-aws iam get-role --role-name chunk-processor-ecr-role
-aws iam list-attached-role-policies --role-name chunk-processor-ecr-role
-```
-
-## Long-term Fix
-
-1. **Add the IRSA annotation to the ServiceAccount in the manifest** (infrastructure as code), not just imperatively. Commit this to the repo so it survives future re-deployments.
-
-2. **Ensure the IAM role is created via Terraform** (in `main.tf` or a dedicated IAM module) with the correct OIDC trust policy and `AmazonEC2ContainerRegistryReadOnly` policy attached.
-
-3. **Use the EKS node group IAM role as a fallback**: The node group IAM role in `main.tf` already has `AmazonEC2ContainerRegistryReadOnly` attached. For workloads without IRSA, nodes can pull from ECR using the node role. Verify this is present on the new node.
-
-4. **Pin image tags to tested versions**: The failing image is `v3.0.0-rc1` — a release candidate. RC tags should never be deployed to production without explicit approval. Use semantic versioning and require stable tags (`v3.0.0`) for production deployments.
-
-## Prevention
-
-1. **ImagePullBackOff alert**: Create a CloudWatch alarm on `kube_pod_container_status_waiting_reason{reason="ImagePullBackOff"} > 0`. Alert within 2 minutes — this is always a hard blocker for rollouts.
-
-2. **IRSA validation in CI**: Add a check to the deployment pipeline that verifies the ServiceAccount for every Deployment has the `eks.amazonaws.com/role-arn` annotation set before applying to production. Fail the pipeline if it is missing.
-
-3. **ECR image existence check**: Before triggering a rollout, verify the image tag exists in ECR:
-   ```bash
-   aws ecr describe-images \
-     --repository-name chunk-processor \
-     --image-ids imageTag=v3.0.0-rc1
-   ```
-   Fail the deploy pipeline if the tag does not exist.
-
-4. **Block RC/pre-release tags in production**: Enforce via OPA/Gatekeeper that production namespaces may only run images tagged with a full semantic version (`vX.Y.Z`), never `-rc`, `-alpha`, or `-beta` suffixes.
-
-5. **Rollback strategy**: The rolling update strategy (`maxUnavailable: 25%`) kept 3 old pods running during the failed rollout — service degraded but not down. Ensure all deployments have rollback automation:
-   ```bash
-   kubectl rollout undo deployment/chunk-processor -n video-analytics
-   ```
-   Trigger this automatically in CI/CD if `rollout status` does not complete within a timeout window (e.g., 10 minutes).
+Automatic Undo: If a new update gets stuck like this in the future, we'll set the system to automatically "Undo" and go back to the version that worked, rather than leaving the system in a degraded state.
