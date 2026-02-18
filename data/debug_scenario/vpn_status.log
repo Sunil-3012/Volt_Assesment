@@ -1,0 +1,29 @@
+2025-11-12 07:00:00 VPN Tunnel aws-vpn Status: UP
+2025-11-12 07:00:00 IPSec SA: ESP in/out, SPI=0xdeadbeef/0xcafebabe
+2025-11-12 07:00:00 Local: 10.50.1.50 Remote: 52.14.88.201
+2025-11-12 07:00:00 Traffic selectors: 10.50.0.0/16 === 10.0.0.0/16
+2025-11-12 07:00:00 IKEv2 MTU: 1500
+---
+2025-11-12 08:15:03 NOTICE: Local interface eno1 MTU changed: 1500 -> 9000
+2025-11-12 08:15:05 WARNING: IKE SA keepalive: packet size 9000 exceeds path MTU 1500
+2025-11-12 08:18:30 WARNING: ESP packets being fragmented at gateway, excessive reassembly failures
+2025-11-12 08:18:31 WARNING: IPSec throughput degraded: expected 50Mbps, actual 2.3Mbps
+2025-11-12 08:20:58 ERROR: DPD timeout — peer 52.14.88.201 not responding
+2025-11-12 08:21:00 NOTICE: Tunnel DOWN — initiating rekey
+2025-11-12 08:21:10 NOTICE: Tunnel UP — IKE_SA re-established
+2025-11-12 08:21:15 WARNING: ESP packets still being fragmented — path MTU discovery failing
+2025-11-12 08:21:15 WARNING: DF bit set on ESP packets, ICMP "fragmentation needed" returned by 10.50.1.1
+2025-11-12 08:25:02 ERROR: DPD timeout — peer 52.14.88.201 not responding
+2025-11-12 08:25:05 NOTICE: Tunnel DOWN — initiating rekey
+2025-11-12 08:26:01 NOTICE: Tunnel UP — IKE_SA re-established
+2025-11-12 08:35:00 ERROR: DPD timeout — peer 52.14.88.201 not responding
+2025-11-12 08:35:03 NOTICE: Tunnel DOWN — initiating rekey
+2025-11-12 08:36:01 NOTICE: Tunnel UP — IKE_SA re-established
+2025-11-12 08:36:05 WARNING: Sustained packet loss on ESP tunnel: 34%
+2025-11-12 08:50:00 ERROR: DPD timeout — peer 52.14.88.201 not responding
+2025-11-12 08:50:03 NOTICE: Tunnel DOWN — initiating rekey
+2025-11-12 08:51:01 NOTICE: Tunnel UP — IKE_SA re-established
+---
+2025-11-12 09:00:00 NOTICE: Local interface eno1 MTU changed: 9000 -> 1500
+2025-11-12 09:00:05 NOTICE: ESP packet fragmentation stopped
+2025-11-12 09:00:10 NOTICE: Tunnel stable — DPD normal

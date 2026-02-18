@@ -1,0 +1,8 @@
+# service.yaml — Video Processing Service
+#
+# TASK: Create a Kubernetes Service for the video-processor deployment.
+#
+# Requirements:
+#   - ClusterIP type
+#   - Selector matches the deployment labels
+#   - Appropriate port configuration

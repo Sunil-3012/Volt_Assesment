@@ -1,0 +1,48 @@
+{
+  "site_id": "SITE-2847",
+  "customer": "Acme Distribution",
+  "location": "Regional Distribution Center — Denver, CO",
+  "deployment_type": "standard",
+  "network": {
+    "wan_connection": "100 Mbps dedicated fiber",
+    "vpn_type": "IPSec site-to-site to AWS VPC",
+    "vpn_endpoint": "vpn-0a1b2c3d4e5f.amazonaws.com",
+    "site_subnet": "10.50.0.0/16",
+    "existing_vlans": [
+      {"id": 1, "name": "management", "subnet": "10.50.1.0/24", "purpose": "IT management and SSH access"},
+      {"id": 10, "name": "corporate", "subnet": "10.50.10.0/24", "purpose": "Office workstations"}
+    ],
+    "dns_servers": ["10.50.1.10", "10.50.1.11"],
+    "ntp_server": "10.50.1.10"
+  },
+  "cameras": [
+    {"id": "CAM-001", "model": "Axis P3265-LVE", "location": "Loading Dock A", "ip": "dhcp", "protocol": "ONVIF/RTSP"},
+    {"id": "CAM-002", "model": "Axis P3265-LVE", "location": "Loading Dock B", "ip": "dhcp", "protocol": "ONVIF/RTSP"},
+    {"id": "CAM-003", "model": "Axis P3265-LVE", "location": "Warehouse Entrance", "ip": "dhcp", "protocol": "ONVIF/RTSP"},
+    {"id": "CAM-004", "model": "Axis Q6135-LE", "location": "Parking Lot North", "ip": "dhcp", "protocol": "ONVIF/RTSP"},
+    {"id": "CAM-005", "model": "Axis Q6135-LE", "location": "Parking Lot South", "ip": "dhcp", "protocol": "ONVIF/RTSP"},
+    {"id": "CAM-006", "model": "Axis P3265-LVE", "location": "Receiving Area", "ip": "dhcp", "protocol": "ONVIF/RTSP"},
+    {"id": "CAM-007", "model": "Axis P3265-LVE", "location": "Shipping Area", "ip": "dhcp", "protocol": "ONVIF/RTSP"},
+    {"id": "CAM-008", "model": "Axis P3265-LVE", "location": "Main Hallway", "ip": "dhcp", "protocol": "ONVIF/RTSP"}
+  ],
+  "edge_device": {
+    "model": "Dell PowerEdge XR4000",
+    "cpu": "Intel Xeon E-2388G (8 cores)",
+    "ram_gb": 64,
+    "gpu": "NVIDIA T4",
+    "storage": "2x 1TB NVMe SSD (RAID 1)",
+    "os": "Ubuntu 22.04 LTS",
+    "nics": [
+      {"name": "eno1", "speed": "1 Gbps", "purpose": "management + WAN uplink"},
+      {"name": "eno2", "speed": "1 Gbps", "purpose": "camera VLAN"}
+    ]
+  },
+  "requirements": {
+    "video_retention_local_hours": 24,
+    "upload_bandwidth_limit_mbps": 50,
+    "max_camera_streams": 16,
+    "remote_management": true,
+    "monitoring": "Prometheus + Grafana on edge, metrics pushed to cloud",
+    "security": "Camera VLAN isolated, edge device in management VLAN, all cloud traffic over VPN"
+  }
+}

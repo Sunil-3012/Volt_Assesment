@@ -1,0 +1,9 @@
+LAST SEEN   TYPE      REASON              OBJECT                                      MESSAGE
+3m          Normal    Scheduled           pod/video-processor-7d4f8b6c9-x2k4m        Successfully assigned video-analytics/video-processor-7d4f8b6c9-x2k4m to ip-10-0-3-42.ec2.internal
+3m          Normal    Pulled              pod/video-processor-7d4f8b6c9-x2k4m        Container image "123456789012.dkr.ecr.us-east-1.amazonaws.com/video-processor:v2.3.1" already present on machine
+3m          Normal    Created             pod/video-processor-7d4f8b6c9-x2k4m        Created container video-processor
+3m          Normal    Started             pod/video-processor-7d4f8b6c9-x2k4m        Started container video-processor
+2m          Warning   OOMKilling          pod/video-processor-7d4f8b6c9-x2k4m        Memory cgroup out of memory: Killed process 4521 (java) total-vm:2847632kB, anon-rss:525312kB
+1m          Normal    Pulled              pod/video-processor-7d4f8b6c9-x2k4m        Container image "123456789012.dkr.ecr.us-east-1.amazonaws.com/video-processor:v2.3.1" already present on machine
+1m          Warning   BackOff             pod/video-processor-7d4f8b6c9-x2k4m        Back-off restarting failed container
+45s         Warning   OOMKilling          pod/video-processor-7d4f8b6c9-x2k4m        Memory cgroup out of memory: Killed process 4892 (java) total-vm:2913456kB, anon-rss:531488kB

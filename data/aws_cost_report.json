@@ -1,0 +1,210 @@
+{
+  "report_period": {
+    "start": "2025-11-01",
+    "end": "2025-11-30"
+  },
+  "account_id": "123456789012",
+  "total_cost_usd": 47832.15,
+  "services": [
+    {
+      "service": "Amazon Elastic Compute Cloud",
+      "cost_usd": 22145.60,
+      "details": [
+        {
+          "resource": "EKS Node Group - video-processing",
+          "instance_type": "c5.4xlarge",
+          "count": 8,
+          "utilization_avg_pct": 34,
+          "cost_usd": 11520.00,
+          "running_hours": 5760,
+          "on_demand": true
+        },
+        {
+          "resource": "EKS Node Group - general",
+          "instance_type": "m5.2xlarge",
+          "count": 6,
+          "utilization_avg_pct": 22,
+          "cost_usd": 5544.00,
+          "running_hours": 4320,
+          "on_demand": true
+        },
+        {
+          "resource": "EKS Node Group - gpu-inference",
+          "instance_type": "g4dn.xlarge",
+          "count": 4,
+          "utilization_avg_pct": 61,
+          "cost_usd": 3168.00,
+          "running_hours": 2880,
+          "on_demand": true
+        },
+        {
+          "resource": "NAT Gateway",
+          "cost_usd": 1120.00,
+          "data_processed_gb": 2450
+        },
+        {
+          "resource": "Bastion Hosts",
+          "instance_type": "t3.medium",
+          "count": 3,
+          "utilization_avg_pct": 5,
+          "cost_usd": 793.60,
+          "running_hours": 2160,
+          "on_demand": true
+        }
+      ]
+    },
+    {
+      "service": "Amazon Simple Storage Service",
+      "cost_usd": 12340.50,
+      "details": [
+        {
+          "bucket": "vlt-video-chunks-prod",
+          "storage_gb": 45000,
+          "storage_class": "STANDARD",
+          "cost_usd": 10350.00,
+          "oldest_object_days": 730,
+          "access_pattern": "95% of access within first 30 days"
+        },
+        {
+          "bucket": "vlt-model-artifacts-prod",
+          "storage_gb": 2500,
+          "storage_class": "STANDARD",
+          "cost_usd": 575.00,
+          "oldest_object_days": 365
+        },
+        {
+          "bucket": "vlt-logs-prod",
+          "storage_gb": 8200,
+          "storage_class": "STANDARD",
+          "cost_usd": 1415.50,
+          "oldest_object_days": 545,
+          "access_pattern": "rarely accessed after 7 days"
+        }
+      ]
+    },
+    {
+      "service": "Amazon Elastic Kubernetes Service",
+      "cost_usd": 2190.00,
+      "details": [
+        {
+          "resource": "EKS Clusters",
+          "count": 3,
+          "cost_usd": 2190.00,
+          "note": "dev, staging, production clusters"
+        }
+      ]
+    },
+    {
+      "service": "Amazon Relational Database Service",
+      "cost_usd": 4856.00,
+      "details": [
+        {
+          "resource": "PostgreSQL Multi-AZ",
+          "instance_type": "db.r5.2xlarge",
+          "count": 1,
+          "utilization_avg_pct": 28,
+          "cost_usd": 3456.00
+        },
+        {
+          "resource": "PostgreSQL Read Replicas",
+          "instance_type": "db.r5.xlarge",
+          "count": 2,
+          "utilization_avg_pct": 12,
+          "cost_usd": 1400.00
+        }
+      ]
+    },
+    {
+      "service": "Data Transfer",
+      "cost_usd": 3200.05,
+      "details": [
+        {
+          "type": "NAT Gateway data processing",
+          "gb": 2450,
+          "cost_usd": 1102.50
+        },
+        {
+          "type": "Cross-AZ transfer",
+          "gb": 18500,
+          "cost_usd": 1850.00
+        },
+        {
+          "type": "Internet egress",
+          "gb": 550,
+          "cost_usd": 247.55
+        }
+      ]
+    },
+    {
+      "service": "Amazon CloudWatch",
+      "cost_usd": 1890.00,
+      "details": [
+        {
+          "resource": "Custom Metrics",
+          "count": 1200,
+          "cost_usd": 960.00
+        },
+        {
+          "resource": "Log Ingestion",
+          "gb_per_month": 850,
+          "cost_usd": 680.00
+        },
+        {
+          "resource": "Dashboards",
+          "count": 25,
+          "cost_usd": 250.00
+        }
+      ]
+    },
+    {
+      "service": "Other",
+      "cost_usd": 1210.00,
+      "details": [
+        {
+          "resource": "AWS Secrets Manager",
+          "secrets_count": 45,
+          "cost_usd": 180.00
+        },
+        {
+          "resource": "Amazon ECR",
+          "storage_gb": 120,
+          "cost_usd": 120.00
+        },
+        {
+          "resource": "Amazon SQS",
+          "requests_millions": 450,
+          "cost_usd": 180.00
+        },
+        {
+          "resource": "AWS Lambda",
+          "invocations_millions": 12,
+          "cost_usd": 240.00
+        },
+        {
+          "resource": "Elastic Load Balancing",
+          "count": 5,
+          "cost_usd": 490.00
+        }
+      ]
+    }
+  ],
+  "recommendations": { 
+    # I have included this same in cost_optimization.tf file as well
+    # Current Monthly Cost: $47,832
+    #
+    # Top Cost services:
+    #   1. EC2 (EKS nodes) - $22,146 (under utilized at 22 - 34%)
+    #   2. S3 Storage - $12,341 (all in STANDARD tier)
+    #   3. RDS - $4,856 (oversized instance at 28% utilization)
+    
+    
+    # Top Saving Oppurtunities:
+    ## S3 Storage ($10,350): The vlt-video-chunks-prod bucket has 45TB in Standard tier, but 95% of access happens in the first 30 days. Moving data to Infrequent Access (IA) or Glacier after 30 days will save thousands.
+    
+    ## EC2 Under-utilization ($17,064): Video-processing nodes are at 34% utilization. We should switch these to Spot Instances since Kafka is resilient.
+    
+    ## General nodes are at 22% utilization. These are "right-sizing" candidates (moving from m5.2xlarge to m5.large).
+    
+    ## RDS Over-provisioning ($4,856): The Read Replicas are only at 12% utilization. We can downsize these instances
+  }
+}

@@ -1,0 +1,8 @@
+# networkpolicy.yaml — Network Policy
+#
+# TASK: Create a NetworkPolicy for the video-processor pods.
+#
+# Requirements:
+#   - Restrict ingress to only necessary sources
+#   - Consider what services need to communicate with the video processor
+#   - Default deny is a good starting point

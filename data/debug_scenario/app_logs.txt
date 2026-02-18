@@ -1,0 +1,24 @@
+2025-11-12T08:00:15Z INFO  [uploader] VideoUploader - Upload batch completed: 8/8 chunks, avg speed 42 Mbps
+2025-11-12T08:05:20Z INFO  [uploader] VideoUploader - Upload batch completed: 8/8 chunks, avg speed 44 Mbps
+2025-11-12T08:10:18Z INFO  [uploader] VideoUploader - Upload batch completed: 8/8 chunks, avg speed 41 Mbps
+2025-11-12T08:15:05Z INFO  [uploader] VideoUploader - Starting upload batch: 12 chunks, total 847MB
+2025-11-12T08:15:06Z INFO  [uploader] VideoUploader - S3 multipart upload initiated for chunk-20251112-081200-cam001.ts
+2025-11-12T08:15:35Z WARN  [uploader] VideoUploader - S3 PutObject slow: chunk-20251112-081200-cam001.ts part 1/5, 30s elapsed (expected <5s)
+2025-11-12T08:16:05Z WARN  [uploader] VideoUploader - S3 PutObject slow: chunk-20251112-081200-cam001.ts part 1/5, 60s elapsed
+2025-11-12T08:17:05Z ERROR [uploader] VideoUploader - S3 PutObject timeout: chunk-20251112-081200-cam001.ts part 1/5 — java.net.SocketTimeoutException: Read timed out
+2025-11-12T08:17:06Z WARN  [uploader] VideoUploader - Retrying upload (attempt 2/3): chunk-20251112-081200-cam001.ts
+2025-11-12T08:18:06Z ERROR [uploader] VideoUploader - S3 PutObject timeout: chunk-20251112-081200-cam001.ts part 1/5 — java.net.SocketTimeoutException: Read timed out
+2025-11-12T08:18:07Z WARN  [uploader] VideoUploader - Retrying upload (attempt 3/3): chunk-20251112-081200-cam001.ts
+2025-11-12T08:19:07Z ERROR [uploader] VideoUploader - S3 PutObject timeout: chunk-20251112-081200-cam001.ts part 1/5 — java.net.SocketTimeoutException: Read timed out
+2025-11-12T08:19:07Z ERROR [uploader] VideoUploader - Upload FAILED after 3 attempts: chunk-20251112-081200-cam001.ts
+2025-11-12T08:19:08Z INFO  [uploader] VideoUploader - Moving to next chunk: chunk-20251112-081200-cam002.ts
+2025-11-12T08:20:08Z ERROR [uploader] VideoUploader - Upload FAILED after 3 attempts: chunk-20251112-081200-cam002.ts
+2025-11-12T08:20:09Z WARN  [uploader] VideoUploader - Upload success rate: 0% (0/2 chunks), queue depth: 12
+2025-11-12T08:21:10Z INFO  [uploader] VideoUploader - VPN tunnel state changed: DOWN -> UP
+2025-11-12T08:21:15Z INFO  [uploader] VideoUploader - Retrying failed uploads after tunnel recovery
+2025-11-12T08:22:15Z ERROR [uploader] VideoUploader - Upload FAILED: chunk-20251112-081500-cam003.ts — java.net.SocketTimeoutException: Read timed out
+2025-11-12T08:22:16Z WARN  [uploader] VideoUploader - Network throughput: 1.8 Mbps (expected 50 Mbps)
+2025-11-12T08:22:16Z WARN  [uploader] VideoUploader - Possible MTU/fragmentation issue: large packets timing out, small health checks succeed
+2025-11-12T08:25:00Z ERROR [uploader] VideoUploader - Upload queue backlog: 14 chunks, oldest: 15 minutes
+2025-11-12T08:30:00Z ERROR [uploader] VideoUploader - CRITICAL: Upload queue backlog: 22 chunks, oldest: 20 minutes, disk 85%
+2025-11-12T08:30:01Z ERROR [uploader] VideoUploader - Triggering NOC alert: EDGE_UPLOAD_FAILURE site=SITE-2847

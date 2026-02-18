@@ -1,0 +1,42 @@
+$ kubectl rollout status deployment/chunk-processor -n video-analytics
+Waiting for deployment "chunk-processor" rollout to finish: 1 out of 3 new replicas have been updated...
+
+$ kubectl get pods -n video-analytics -l app=chunk-processor
+NAME                               READY   STATUS             RESTARTS   AGE
+chunk-processor-6b7c8d9e0-old01    1/1     Running            0          3d
+chunk-processor-6b7c8d9e0-old02    1/1     Running            0          3d
+chunk-processor-6b7c8d9e0-old03    1/1     Running            0          3d
+chunk-processor-7c8d9e0f1-new01    0/1     ImagePullBackOff   0          15m
+
+$ kubectl describe pod chunk-processor-7c8d9e0f1-new01 -n video-analytics
+Name:         chunk-processor-7c8d9e0f1-new01
+Namespace:    video-analytics
+Status:       Pending
+Containers:
+  chunk-processor:
+    Image:          123456789012.dkr.ecr.us-east-1.amazonaws.com/chunk-processor:v3.0.0-rc1
+    State:          Waiting
+      Reason:       ImagePullBackOff
+    Ready:          False
+Events:
+  Type     Reason     Age                From               Message
+  ----     ------     ----               ----               -------
+  Normal   Scheduled  15m                default-scheduler  Successfully assigned video-analytics/chunk-processor-7c8d9e0f1-new01 to ip-10-0-4-55.ec2.internal
+  Normal   Pulling    14m (x3 over 15m)  kubelet            Pulling image "123456789012.dkr.ecr.us-east-1.amazonaws.com/chunk-processor:v3.0.0-rc1"
+  Warning  Failed     14m (x3 over 15m)  kubelet            Failed to pull image "123456789012.dkr.ecr.us-east-1.amazonaws.com/chunk-processor:v3.0.0-rc1": rpc error: code = Unknown desc = Error response from daemon: pull access denied for 123456789012.dkr.ecr.us-east-1.amazonaws.com/chunk-processor, repository does not exist or may require 'docker login': denied: Your authorization token has expired. Reauthenticate and try again.
+  Warning  Failed     14m (x3 over 15m)  kubelet            Error: ErrImagePull
+  Normal   BackOff    2m (x45 over 14m)  kubelet            Back-off pulling image "123456789012.dkr.ecr.us-east-1.amazonaws.com/chunk-processor:v3.0.0-rc1"
+  Warning  Failed     2m (x45 over 14m)  kubelet            Error: ImagePullBackOff
+
+$ kubectl get deployment chunk-processor -n video-analytics -o jsonpath='{.spec.strategy}'
+{"rollingUpdate":{"maxSurge":"25%","maxUnavailable":"25%"},"type":"RollingUpdate"}
+
+$ kubectl get sa -n video-analytics chunk-processor -o yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: chunk-processor
+  namespace: video-analytics
+  annotations:
+    # NOTE: IAM role annotation is missing — should be:
+    # eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/chunk-processor-ecr-role

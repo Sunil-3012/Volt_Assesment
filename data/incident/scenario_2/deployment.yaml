@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inference-api
+  namespace: video-analytics
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: inference-api
+  template:
+    metadata:
+      labels:
+        app: inference-api
+        # NOTE: "tier: backend" label is missing from pod template
+        # but the Service selector requires it
+    spec:
+      containers:
+      - name: inference-api
+        image: 123456789012.dkr.ecr.us-east-1.amazonaws.com/inference-api:v1.8.0
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"

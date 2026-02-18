@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Evaluation output
+report.json
+report.md
+*.report.json
+
+# Terraform local state (candidates should not have real state)
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl

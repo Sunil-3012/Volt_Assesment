@@ -1,0 +1,8 @@
+# hpa.yaml — Horizontal Pod Autoscaler
+#
+# TASK: Create an HPA for the video-processor deployment.
+#
+# Requirements:
+#   - Min and max replica counts
+#   - CPU and/or memory metrics with target utilization
+#   - Consider: what scaling behavior makes sense for a video processing workload?

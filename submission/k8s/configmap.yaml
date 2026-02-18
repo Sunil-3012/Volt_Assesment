@@ -1,0 +1,7 @@
+# configmap.yaml — Video Processor Configuration
+#
+# TASK: Create a ConfigMap for the video-processor deployment.
+#
+# Requirements:
+#   - Application configuration values (e.g., log level, Kafka broker, S3 bucket)
+#   - This ConfigMap should be referenced in your deployment.yaml

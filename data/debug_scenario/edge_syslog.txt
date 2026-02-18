@@ -1,0 +1,38 @@
+Nov 12 08:00:01 edge-denver-01 systemd[1]: Started Daily apt download activities.
+Nov 12 08:00:15 edge-denver-01 dockerd[1234]: time="2025-11-12T08:00:15Z" level=info msg="Container healthcheck passed" container=video-ingest-01
+Nov 12 08:01:00 edge-denver-01 CRON[5678]: (root) CMD (/usr/local/bin/metrics-push.sh)
+Nov 12 08:05:22 edge-denver-01 dockerd[1234]: time="2025-11-12T08:05:22Z" level=info msg="Container healthcheck passed" container=video-ingest-01
+Nov 12 08:10:15 edge-denver-01 dockerd[1234]: time="2025-11-12T08:10:15Z" level=info msg="Container healthcheck passed" container=video-ingest-01
+Nov 12 08:15:03 edge-denver-01 kernel: [482103.442] device eno1: MTU changed from 1500 to 9000 via netplan apply
+Nov 12 08:15:03 edge-denver-01 networkd[892]: eno1: link configured
+Nov 12 08:15:04 edge-denver-01 systemd-networkd[892]: eno1: DHCPv4 address 10.50.1.50/24
+Nov 12 08:15:22 edge-denver-01 dockerd[1234]: time="2025-11-12T08:15:22Z" level=info msg="Container healthcheck passed" container=video-ingest-01
+Nov 12 08:17:45 edge-denver-01 kernel: [482253.891] [UFW BLOCK] IN=eno1 OUT= MAC=xx:xx SRC=10.50.20.101 DST=10.50.1.50 LEN=1500 TOS=0x00 PREC=0x00 TTL=64 ID=54321 DF PROTO=UDP SPT=5004 DPT=5004
+Nov 12 08:18:01 edge-denver-01 video-uploader[3456]: INFO: Starting upload batch: 12 chunks, total size 847MB
+Nov 12 08:18:33 edge-denver-01 kernel: [482313.112] ICMP: 10.50.1.1: fragmentation needed and DF set, mtu=1500
+Nov 12 08:18:33 edge-denver-01 kernel: [482313.112] ICMP: 10.50.1.1: fragmentation needed and DF set, mtu=1500
+Nov 12 08:18:34 edge-denver-01 kernel: [482313.445] ICMP: 10.50.1.1: fragmentation needed and DF set, mtu=1500
+Nov 12 08:18:50 edge-denver-01 video-uploader[3456]: WARN: Upload timeout for chunk chunk-20251112-081200-cam001.ts (attempt 1/3)
+Nov 12 08:19:10 edge-denver-01 video-uploader[3456]: WARN: Upload timeout for chunk chunk-20251112-081200-cam001.ts (attempt 2/3)
+Nov 12 08:19:30 edge-denver-01 video-uploader[3456]: ERROR: Upload failed for chunk chunk-20251112-081200-cam001.ts after 3 attempts
+Nov 12 08:19:31 edge-denver-01 video-uploader[3456]: WARN: Upload timeout for chunk chunk-20251112-081200-cam002.ts (attempt 1/3)
+Nov 12 08:20:15 edge-denver-01 dockerd[1234]: time="2025-11-12T08:20:15Z" level=info msg="Container healthcheck passed" container=video-ingest-01
+Nov 12 08:20:30 edge-denver-01 video-uploader[3456]: ERROR: Upload failed for chunk chunk-20251112-081200-cam002.ts after 3 attempts
+Nov 12 08:20:31 edge-denver-01 video-uploader[3456]: WARN: 10 chunks pending upload, queue depth increasing
+Nov 12 08:21:00 edge-denver-01 strongswan[2345]: charon: 09[IKE] sending DPD request
+Nov 12 08:21:02 edge-denver-01 strongswan[2345]: charon: 09[IKE] DPD request timeout, retransmitting
+Nov 12 08:21:05 edge-denver-01 strongswan[2345]: charon: 09[IKE] DPD request timeout, retransmitting
+Nov 12 08:21:08 edge-denver-01 strongswan[2345]: charon: 10[IKE] peer not responding, trying next peer
+Nov 12 08:21:08 edge-denver-01 strongswan[2345]: charon: 10[IKE] deleting IKE_SA aws-vpn[42]
+Nov 12 08:21:09 edge-denver-01 strongswan[2345]: charon: 10[IKE] initiating IKE_SA aws-vpn[43] to 52.14.88.201
+Nov 12 08:21:10 edge-denver-01 strongswan[2345]: charon: 10[IKE] IKE_SA aws-vpn[43] established between 10.50.1.50[10.50.1.50]...52.14.88.201[52.14.88.201]
+Nov 12 08:21:10 edge-denver-01 strongswan[2345]: charon: 10[IKE] CHILD_SA aws-vpn{88} established with SPIs deadbeef_i cafebabe_o
+Nov 12 08:21:15 edge-denver-01 video-uploader[3456]: INFO: VPN tunnel re-established, retrying uploads
+Nov 12 08:21:30 edge-denver-01 video-uploader[3456]: WARN: Upload timeout for chunk chunk-20251112-081500-cam003.ts (attempt 1/3)
+Nov 12 08:21:45 edge-denver-01 kernel: [482505.223] ICMP: 10.50.1.1: fragmentation needed and DF set, mtu=1500
+Nov 12 08:21:45 edge-denver-01 kernel: [482505.224] ICMP: 10.50.1.1: fragmentation needed and DF set, mtu=1500
+Nov 12 08:22:00 edge-denver-01 video-uploader[3456]: ERROR: Bulk upload failure — 0 of 12 chunks uploaded in last 5 minutes
+Nov 12 08:22:01 edge-denver-01 video-uploader[3456]: ERROR: Local disk usage at 78%, oldest chunk age: 35 minutes
+Nov 12 08:25:15 edge-denver-01 dockerd[1234]: time="2025-11-12T08:25:15Z" level=info msg="Container healthcheck passed" container=video-ingest-01
+Nov 12 08:30:00 edge-denver-01 video-uploader[3456]: ERROR: Local disk usage at 85%, oldest chunk age: 40 minutes
+Nov 12 08:30:01 edge-denver-01 video-uploader[3456]: CRITICAL: Upload queue backlog exceeds threshold, alerting NOC

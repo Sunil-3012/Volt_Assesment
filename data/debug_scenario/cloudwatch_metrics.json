@@ -1,0 +1,54 @@
+{
+  "metric_name": "VideoChunkUploadErrors",
+  "namespace": "VLT/VideoAnalytics",
+  "period_seconds": 300,
+  "site_id": "SITE-2847",
+  "datapoints": [
+    {"timestamp": "2025-11-12T07:30:00Z", "value": 0, "unit": "Count"},
+    {"timestamp": "2025-11-12T07:35:00Z", "value": 0, "unit": "Count"},
+    {"timestamp": "2025-11-12T07:40:00Z", "value": 0, "unit": "Count"},
+    {"timestamp": "2025-11-12T07:45:00Z", "value": 0, "unit": "Count"},
+    {"timestamp": "2025-11-12T07:50:00Z", "value": 0, "unit": "Count"},
+    {"timestamp": "2025-11-12T07:55:00Z", "value": 0, "unit": "Count"},
+    {"timestamp": "2025-11-12T08:00:00Z", "value": 0, "unit": "Count"},
+    {"timestamp": "2025-11-12T08:05:00Z", "value": 0, "unit": "Count"},
+    {"timestamp": "2025-11-12T08:10:00Z", "value": 0, "unit": "Count"},
+    {"timestamp": "2025-11-12T08:15:00Z", "value": 2, "unit": "Count"},
+    {"timestamp": "2025-11-12T08:20:00Z", "value": 18, "unit": "Count"},
+    {"timestamp": "2025-11-12T08:25:00Z", "value": 24, "unit": "Count"},
+    {"timestamp": "2025-11-12T08:30:00Z", "value": 24, "unit": "Count"},
+    {"timestamp": "2025-11-12T08:35:00Z", "value": 24, "unit": "Count"},
+    {"timestamp": "2025-11-12T08:40:00Z", "value": 24, "unit": "Count"},
+    {"timestamp": "2025-11-12T08:45:00Z", "value": 24, "unit": "Count"},
+    {"timestamp": "2025-11-12T08:50:00Z", "value": 24, "unit": "Count"},
+    {"timestamp": "2025-11-12T08:55:00Z", "value": 24, "unit": "Count"},
+    {"timestamp": "2025-11-12T09:00:00Z", "value": 0, "unit": "Count", "note": "MTU reverted by NOC"}
+  ],
+  "related_metrics": {
+    "VPNTunnelStatus": {
+      "datapoints": [
+        {"timestamp": "2025-11-12T07:30:00Z", "value": 1, "status": "UP"},
+        {"timestamp": "2025-11-12T08:15:00Z", "value": 1, "status": "UP"},
+        {"timestamp": "2025-11-12T08:20:00Z", "value": 0, "status": "DOWN"},
+        {"timestamp": "2025-11-12T08:21:00Z", "value": 1, "status": "UP"},
+        {"timestamp": "2025-11-12T08:25:00Z", "value": 0, "status": "DOWN"},
+        {"timestamp": "2025-11-12T08:26:00Z", "value": 1, "status": "UP"},
+        {"timestamp": "2025-11-12T08:35:00Z", "value": 0, "status": "DOWN"},
+        {"timestamp": "2025-11-12T08:36:00Z", "value": 1, "status": "UP"},
+        {"timestamp": "2025-11-12T08:50:00Z", "value": 0, "status": "DOWN"},
+        {"timestamp": "2025-11-12T08:51:00Z", "value": 1, "status": "UP"},
+        {"timestamp": "2025-11-12T09:00:00Z", "value": 1, "status": "UP"}
+      ]
+    },
+    "EdgeDiskUsagePercent": {
+      "datapoints": [
+        {"timestamp": "2025-11-12T07:30:00Z", "value": 42},
+        {"timestamp": "2025-11-12T08:00:00Z", "value": 45},
+        {"timestamp": "2025-11-12T08:15:00Z", "value": 52},
+        {"timestamp": "2025-11-12T08:30:00Z", "value": 85},
+        {"timestamp": "2025-11-12T08:45:00Z", "value": 91},
+        {"timestamp": "2025-11-12T09:00:00Z", "value": 65}
+      ]
+    }
+  }
+}

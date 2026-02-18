@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: video-processor-7d4f8b6c9-x2k4m
+  namespace: video-analytics
+  labels:
+    app: video-processor
+    version: v2.3.1
+spec:
+  containers:
+  - name: video-processor
+    image: 123456789012.dkr.ecr.us-east-1.amazonaws.com/video-processor:v2.3.1
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "512Mi"
+        cpu: "1000m"
+    env:
+    - name: JAVA_OPTS
+      value: "-Xmx384m -Xms256m"
+    - name: PROCESSING_THREADS
+      value: "8"
+    - name: BATCH_SIZE
+      value: "50"
+status:
+  phase: Running
+  containerStatuses:
+  - name: video-processor
+    state:
+      waiting:
+        reason: CrashLoopBackOff
+    lastState:
+      terminated:
+        exitCode: 137
+        reason: OOMKilled
+        startedAt: "2025-11-15T14:23:10Z"
+        finishedAt: "2025-11-15T14:25:43Z"
+    restartCount: 7
+    ready: false
+  conditions:
+  - type: Ready
+    status: "False"
+  - type: ContainersReady
+    status: "False"

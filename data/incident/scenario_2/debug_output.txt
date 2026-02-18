@@ -1,0 +1,33 @@
+$ kubectl get pods -n video-analytics -l app=inference-api
+NAME                             READY   STATUS    RESTARTS   AGE
+inference-api-5f7b8c9d4-abc12   1/1     Running   0          2h
+inference-api-5f7b8c9d4-def34   1/1     Running   0          2h
+inference-api-5f7b8c9d4-ghi56   1/1     Running   0          2h
+
+$ kubectl get endpoints inference-api -n video-analytics
+NAME            ENDPOINTS   AGE
+inference-api   <none>      2h
+
+$ kubectl describe svc inference-api -n video-analytics
+Name:              inference-api
+Namespace:         video-analytics
+Labels:            <none>
+Selector:          app=inference-api,tier=backend
+Type:              ClusterIP
+IP:                172.20.45.123
+Port:              http  8080/TCP
+TargetPort:        8080/TCP
+Endpoints:         <none>
+Session Affinity:  None
+
+$ kubectl get pods -n video-analytics -l app=inference-api --show-labels
+NAME                             READY   STATUS    RESTARTS   AGE   LABELS
+inference-api-5f7b8c9d4-abc12   1/1     Running   0          2h    app=inference-api,pod-template-hash=5f7b8c9d4
+inference-api-5f7b8c9d4-def34   1/1     Running   0          2h    app=inference-api,pod-template-hash=5f7b8c9d4
+inference-api-5f7b8c9d4-ghi56   1/1     Running   0          2h    app=inference-api,pod-template-hash=5f7b8c9d4
+
+$ kubectl exec -it web-frontend-6a5b4c3d2-jkl78 -n video-analytics -- curl -v http://inference-api:8080/health
+*   Trying 172.20.45.123:8080...
+* connect to 172.20.45.123 port 8080 failed: Connection timed out
+* Failed to connect to inference-api port 8080: Connection timed out
+curl: (28) Connection timed out after 30001 milliseconds

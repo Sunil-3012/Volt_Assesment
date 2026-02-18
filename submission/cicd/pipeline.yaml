@@ -1,0 +1,15 @@
+# pipeline.yaml — CI/CD Pipeline Definition
+#
+# TASK: Define a CI/CD pipeline for the video-analytics application.
+# Use GitHub Actions syntax (or clearly comment which CI system you're targeting).
+#
+# Requirements:
+#   - Build stage: compile, run unit tests
+#   - Test stage: integration tests, security scanning
+#   - Deploy to staging: push to ECR, deploy to EKS staging
+#   - Deploy to production: manual approval gate, deploy to EKS prod
+#   - Rollback mechanism on failure
+#   - Notifications on failure
+#
+# The application is a Java service built with Gradle, containerized,
+# deployed to EKS via kubectl/helm.

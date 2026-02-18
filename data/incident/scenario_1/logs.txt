@@ -1,0 +1,17 @@
+2025-11-15T14:23:15Z INFO  [main] VideoProcessor - Starting video processor v2.3.1
+2025-11-15T14:23:16Z INFO  [main] VideoProcessor - JVM max heap: 384MB
+2025-11-15T14:23:16Z INFO  [main] VideoProcessor - Initializing 8 processing threads
+2025-11-15T14:23:17Z INFO  [main] VideoProcessor - Connected to Kafka broker kafka-prod.internal:9092
+2025-11-15T14:23:17Z INFO  [main] VideoProcessor - Subscribed to topic: video-fragments
+2025-11-15T14:23:18Z INFO  [thread-1] FragmentProcessor - Processing batch of 50 fragments from camera CAM-001
+2025-11-15T14:23:19Z INFO  [thread-2] FragmentProcessor - Processing batch of 50 fragments from camera CAM-002
+2025-11-15T14:23:19Z INFO  [thread-3] FragmentProcessor - Processing batch of 50 fragments from camera CAM-005
+2025-11-15T14:23:20Z INFO  [thread-4] FragmentProcessor - Processing batch of 50 fragments from camera CAM-003
+2025-11-15T14:23:22Z WARN  [thread-1] FragmentProcessor - Heap usage at 78% (299MB / 384MB)
+2025-11-15T14:23:25Z INFO  [thread-5] FragmentProcessor - Processing batch of 50 fragments from camera CAM-007
+2025-11-15T14:23:28Z WARN  [thread-2] FragmentProcessor - Heap usage at 85% (326MB / 384MB)
+2025-11-15T14:23:30Z INFO  [thread-6] FragmentProcessor - Processing batch of 50 fragments from camera CAM-004
+2025-11-15T14:23:35Z WARN  [gc-monitor] GCMonitor - Full GC triggered, pause: 1.2s
+2025-11-15T14:23:40Z ERROR [thread-1] FragmentProcessor - java.lang.OutOfMemoryError: Java heap space
+2025-11-15T14:23:40Z ERROR [thread-1] FragmentProcessor -   at java.nio.ByteBuffer.allocate(ByteBuffer.java:334)
+2025-11-15T14:23:40Z ERROR [thread-1] FragmentProcessor -   at com.vlt.video.FragmentProcessor.concatenateFragments(FragmentProcessor.java:128)
