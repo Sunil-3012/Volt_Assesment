@@ -1,8 +1,89 @@
-# hpa.yaml — Horizontal Pod Autoscaler
+# hpa.yaml — Horizontal Pod Autoscaler for video-processor
 #
-# TASK: Create an HPA for the video-processor deployment.
+# WHY HPA?
+# Video fragment volume is highly variable:
+#   - Peak: rush hour, motion-event spikes, all 32 cameras streaming simultaneously
+#   - Off-peak: nights/weekends, reduced camera activity
+# Without HPA, we either over-provision (waste money) or under-provision (drop frames).
 #
-# Requirements:
-#   - Min and max replica counts
-#   - CPU and/or memory metrics with target utilization
-#   - Consider: what scaling behavior makes sense for a video processing workload?
+# SCALING LOGIC:
+# CPU metric: when avg CPU across all pods exceeds 70%, add more pods.
+#   Video concatenation (ByteBuffer allocation, compression) is CPU-bound.
+#   70% gives headroom before a pod becomes so busy it starts dropping Kafka messages.
+#
+# Memory metric: when avg memory exceeds 75%, add more pods.
+#   After the OOMKilled incident (Scenario 1), memory is our second critical signal.
+#   75% of 1Gi = ~768Mi — still safe before the 1Gi limit is hit.
+#
+# MIN REPLICAS (3): matches the deployment replica count.
+#   We never scale below 3 because:
+#   - Kafka topic likely has 3+ partitions (1 consumer per partition minimum)
+#   - Anti-affinity spreads pods across nodes; dropping below 3 loses HA benefit
+#
+# MAX REPLICAS (10): capped at 10.
+#   This prevents a runaway autoscaler from consuming all cluster nodes.
+#   At 10 pods × 500m CPU request = 5 cores reserved from the general node group.
+#   Revisit this cap if we grow to 32+ cameras per site.
+#
+# SCALE-DOWN BEHAVIOR:
+# Default scale-down is aggressive (pods removed immediately after cooldown).
+# We add a stabilizationWindowSeconds of 300s (5 min) for scale-down to prevent
+# thrashing — if video traffic spikes briefly and then drops, we don't want to
+# repeatedly scale up and down within minutes.
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: video-processor-hpa
+  namespace: video-analytics
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: video-processor
+
+  minReplicas: 3
+  maxReplicas: 10
+
+  metrics:
+  # --- CPU Metric ---
+  # Scale up when average CPU utilization across all pods exceeds 70%.
+  # "utilization" is measured as a percentage of the resource REQUEST (500m),
+  # not the limit. At 70% of 500m = 350m actual CPU used per pod.
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+
+  # --- Memory Metric ---
+  # Scale up when average memory usage exceeds 75% of request (512Mi).
+  # 75% of 512Mi = ~384Mi. This gives a buffer before hitting the 1Gi limit.
+  # Memory-based scaling complements CPU: some workloads are memory-bound
+  # (large video batches) without being CPU-bound.
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 75
+
+  behavior:
+    scaleDown:
+      # Wait 5 minutes of sustained low load before removing pods.
+      # This prevents thrashing from brief traffic dips between camera bursts.
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Pods
+        value: 1          # remove at most 1 pod per scale-down step
+        periodSeconds: 60 # re-evaluate every 60 seconds
+
+    scaleUp:
+      # Scale up immediately on traffic spikes — video frames cannot be queued
+      # indefinitely in Kafka without causing backpressure on edge devices.
+      stabilizationWindowSeconds: 30
+      policies:
+      - type: Pods
+        value: 2          # add up to 2 pods per scale-up step
+        periodSeconds: 30 # check every 30 seconds during high load

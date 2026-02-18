@@ -1,7 +1,57 @@
 # configmap.yaml — Video Processor Configuration
 #
-# TASK: Create a ConfigMap for the video-processor deployment.
+# WHY A CONFIGMAP?
+# ConfigMaps decouple configuration from container images.
+# Change Kafka brokers, log levels, or bucket names without
+# rebuilding the image — just update the ConfigMap and roll the pods.
 #
-# Requirements:
-#   - Application configuration values (e.g., log level, Kafka broker, S3 bucket)
-#   - This ConfigMap should be referenced in your deployment.yaml
+# WHAT GOES HERE vs SECRETS?
+# Non-sensitive config only (URLs, thread counts, log levels).
+# Passwords, tokens, and API keys go in Kubernetes Secrets or AWS Secrets Manager.
+# Never put credentials in a ConfigMap — it is not encrypted at rest.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: video-processor-config
+  namespace: video-analytics
+  labels:
+    app: video-processor
+data:
+  # --- Kafka Configuration ---
+  # Internal DNS — only reachable from within the cluster/VPN.
+  KAFKA_BROKER: "kafka-prod.internal:9092"
+
+  # Topic that edge devices publish video fragments to.
+  # Must match the topic name the edge video-ingest service produces to.
+  KAFKA_TOPIC: "video-fragments"
+
+  # Consumer group: all replicas share this group so Kafka
+  # auto-balances partitions across pods.
+  KAFKA_CONSUMER_GROUP: "video-processor-group"
+
+  # --- S3 Configuration ---
+  S3_BUCKET: "vlt-video-chunks-prod"
+  AWS_REGION: "us-east-1"
+
+  # --- Processing Configuration ---
+  # 4 threads (down from 8 in the OOMKilled incident) to reduce heap pressure.
+  # 4 threads x batch 25 = 100 concurrent fragment buffers — safe at 1Gi limit.
+  PROCESSING_THREADS: "4"
+  BATCH_SIZE: "25"
+
+  # --- JVM Tuning ---
+  # Rule: max heap = ~60% of container memory limit.
+  # With 1Gi limit → Xmx640m leaves ~384Mi for JVM overhead
+  # (metaspace, thread stacks, JIT cache, native buffers).
+  # This directly fixes the OOMKilled root cause from Scenario 1.
+  JAVA_OPTS: "-Xmx640m -Xms256m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+
+  # --- Logging ---
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+
+  # --- Health Endpoints ---
+  SERVER_PORT: "8080"
+  HEALTH_LIVENESS_PATH: "/health/live"
+  HEALTH_READINESS_PATH: "/health/ready"

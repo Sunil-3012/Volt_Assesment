@@ -1,15 +1,4 @@
 # deployment.yaml — Video Processing Service Deployment
-#
-# TASK: Complete this deployment manifest for a production video processing service.
-#
-# Requirements:
-#   - Resource requests and limits (CPU + memory)
-#   - Liveness and readiness probes
-#   - Security context (non-root, read-only root filesystem)
-#   - Anti-affinity or topology spread constraints
-#   - Image tag should NOT be :latest
-#   - Reference the ConfigMap you create in configmap.yaml
-#   - Environment variables for service configuration
 
 apiVersion: apps/v1
 kind: Deployment
@@ -23,21 +12,216 @@ spec:
   selector:
     matchLabels:
       app: video-processor
+
+  # Rolling update strategy: at most 1 pod unavailable at a time.
+  # For a 3-replica video processor, this means 2 pods always serve traffic during a deploy.
+  # maxSurge: 1 allows a 4th pod to start before an old one is terminated.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+
   template:
     metadata:
       labels:
         app: video-processor
     spec:
+
+      # =====================================================================
+      # POD-LEVEL SECURITY CONTEXT
+      # =====================================================================
+      # runAsNonRoot: the container runtime will reject the pod if the image
+      # tries to run as UID 0 (root). Prevents privilege escalation attacks.
+      #
+      # runAsUser/Group 1000: a non-privileged UID. The application process
+      # inside the container will own files as this user.
+      #
+      # fsGroup 1000: all volumes mounted into the pod will be owned by GID 1000,
+      # so the non-root app user can write to them (e.g., temp directories).
+      #
+      # seccompProfile: RuntimeDefault applies the container runtime's default
+      # seccomp filter — blocks dangerous syscalls (e.g., ptrace, mount) without
+      # having to write a custom profile.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+
+      # =====================================================================
+      # ANTI-AFFINITY
+      # =====================================================================
+      # WHY: If all 3 replicas land on the same node, a single node failure
+      # kills the entire service. Anti-affinity spreads them across nodes.
+      #
+      # preferredDuringScheduling (soft rule): Kubernetes will TRY to spread pods
+      # across nodes but won't block scheduling if there aren't enough nodes.
+      # This is better than "required" for small clusters where strict spreading
+      # would cause pods to stay Pending forever.
+      #
+      # topologyKey: kubernetes.io/hostname means "one pod per node".
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: video-processor
+              topologyKey: kubernetes.io/hostname
+
+      # ServiceAccount for IRSA (IAM Roles for Service Accounts).
+      # This account must have the eks.amazonaws.com/role-arn annotation
+      # pointing to an IAM role with S3 write + ECR read permissions.
+      # (Lesson from Scenario 3 — missing this annotation breaks ECR pulls.)
+      serviceAccountName: video-processor
+
       containers:
       - name: video-processor
-        image: # TODO: Set image with a specific tag (not :latest)
+        # Pinned to a specific semantic version tag — NEVER :latest.
+        # WHY: :latest means every deploy could pull a different image.
+        # A bad push to :latest would silently deploy broken code to production.
+        # Pinned tags make deployments reproducible and rollbacks reliable.
+        image: 123456789012.dkr.ecr.us-east-1.amazonaws.com/video-processor:v2.3.1
+
         ports:
         - containerPort: 8080
           name: http
-        # TODO: Add resource requests and limits
-        # TODO: Add liveness probe
-        # TODO: Add readiness probe
-        # TODO: Add security context
-        # TODO: Add environment variables (reference ConfigMap)
-      # TODO: Add pod-level security context
-      # TODO: Add anti-affinity or topology spread constraints
+          protocol: TCP
+
+        # =================================================================
+        # RESOURCE REQUESTS AND LIMITS
+        # =================================================================
+        # requests: what the pod is GUARANTEED — scheduler uses this to find
+        #           a node with enough available capacity.
+        # limits:   the hard ceiling — if the container exceeds this,
+        #           it gets OOMKilled (memory) or throttled (CPU).
+        #
+        # Memory: 512Mi request, 1Gi limit.
+        # The Scenario 1 incident showed 512Mi limit was too tight for the JVM.
+        # The JVM heap (-Xmx640m in ConfigMap) + overhead fits comfortably in 1Gi.
+        # Request = 512Mi so the scheduler finds a node with that much free memory.
+        #
+        # CPU: 500m request, 1000m (1 core) limit.
+        # Video processing is CPU-intensive during concatenation.
+        # Limiting to 1 core prevents one noisy pod from starving neighbours.
+        # CPU throttling is recoverable (just slower); OOMKill is not.
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+
+        # =================================================================
+        # LIVENESS PROBE
+        # =================================================================
+        # Purpose: detect if the app is STUCK (e.g., deadlock, JVM frozen).
+        # If liveness fails, Kubernetes RESTARTS the container.
+        #
+        # We use HTTP GET to the /health/live endpoint.
+        # initialDelaySeconds: 60 — gives the JVM time to start up.
+        #   Starting too early would kill the pod before it's even initialized.
+        # periodSeconds: 15 — check every 15 seconds.
+        # failureThreshold: 3 — restart only after 3 consecutive failures
+        #   (45 seconds of sustained failure), not on a single blip.
+        # timeoutSeconds: 5 — don't wait forever for a response.
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 15
+          failureThreshold: 3
+          timeoutSeconds: 5
+
+        # =================================================================
+        # READINESS PROBE
+        # =================================================================
+        # Purpose: detect if the pod is READY TO RECEIVE TRAFFIC.
+        # If readiness fails, the pod is removed from the Service endpoints
+        # (traffic stops flowing to it) but it is NOT restarted.
+        #
+        # KEY DIFFERENCE from liveness:
+        # A pod can be alive but not ready (e.g., still connecting to Kafka,
+        # or under too much load). We want to stop sending it more work,
+        # not kill and restart it.
+        #
+        # initialDelaySeconds: 30 — shorter than liveness; readiness can be
+        # checked earlier since it only needs Kafka connection, not full JVM init.
+        # failureThreshold: 2 — faster to pull from service endpoints.
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 2
+          timeoutSeconds: 5
+
+        # =================================================================
+        # CONTAINER-LEVEL SECURITY CONTEXT
+        # =================================================================
+        # allowPrivilegeEscalation: false — prevents the process from gaining
+        # more privileges than its parent (e.g., via setuid binaries).
+        #
+        # readOnlyRootFilesystem: true — the container cannot write to its own
+        # filesystem. This stops attackers from dropping backdoors or scripts
+        # if they achieve code execution. App writes go to mounted volumes.
+        #
+        # capabilities.drop: ALL — removes all Linux capabilities (NET_ADMIN,
+        # SYS_ADMIN, etc.). The JVM video processor needs none of them.
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+
+        # =================================================================
+        # ENVIRONMENT VARIABLES — from ConfigMap
+        # =================================================================
+        # envFrom loads ALL keys from the ConfigMap as environment variables.
+        # This is cleaner than listing each variable individually and means
+        # the ConfigMap is the single source of truth for app config.
+        envFrom:
+        - configMapRef:
+            name: video-processor-config
+
+        # Additional env vars that need pod-specific values (not in ConfigMap).
+        env:
+        # Expose the pod name so the app can include it in logs for traceability.
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        # Expose the node name for capacity-aware logging.
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+
+        # =================================================================
+        # VOLUME MOUNTS
+        # =================================================================
+        # readOnlyRootFilesystem: true means the app cannot write anywhere
+        # EXCEPT explicitly mounted volumes. We provide two writable volumes:
+        # 1. /tmp — for JVM temp files, ByteBuffer spill-over
+        # 2. /app/logs — for log file output before shipping to CloudWatch
+        volumeMounts:
+        - name: tmp-dir
+          mountPath: /tmp
+        - name: log-dir
+          mountPath: /app/logs
+
+      volumes:
+      # emptyDir: created fresh for each pod, deleted when pod is removed.
+      # This is safe for temp/log data that doesn't need to persist across restarts.
+      - name: tmp-dir
+        emptyDir: {}
+      - name: log-dir
+        emptyDir: {}

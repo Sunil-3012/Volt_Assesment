@@ -1,8 +1,67 @@
-# networkpolicy.yaml — Network Policy
+# networkpolicy.yaml — Network Policy for video-processor
 #
-# TASK: Create a NetworkPolicy for the video-processor pods.
+# SECURITY DESIGN PRINCIPLE: Default Deny + Explicit Allow
 #
-# Requirements:
-#   - Restrict ingress to only necessary sources
-#   - Consider what services need to communicate with the video processor
-#   - Default deny is a good starting point
+# Without any NetworkPolicy, ALL pods in the namespace can talk to each other.
+# This is dangerous — if any pod is compromised, it can reach any other service.
+# We start with "deny all ingress" and then whitelist only what is needed.
+#
+# WHAT TRAFFIC DOES video-processor LEGITIMATELY RECEIVE?
+# 1. From api-gateway — to query processing status / results via HTTP
+# 2. From Prometheus scraper (monitoring namespace) — to scrape /metrics
+# 3. Egress (outbound) to Kafka and S3 is NOT restricted by this policy;
+#    egress control is handled at the security group level (VPC).
+#
+# WHAT IS BLOCKED BY DEFAULT?
+# - web-frontend and any other pods NOT listed in the ingress rules
+# - Any pod from other namespaces (unless explicitly listed)
+# - External traffic (not applicable since this is ClusterIP only)
+#
+# NOTE (lesson from Scenario 2):
+# The incident showed web-frontend was blocked because it wasn't allowed in
+# the NetworkPolicy. In our design, that's CORRECT behaviour — web-frontend
+# should talk to api-gateway, not directly to video-processor.
+# The api-gateway is the only legitimate caller.
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: video-processor-netpol
+  namespace: video-analytics
+spec:
+  # Apply this policy to all video-processor pods.
+  podSelector:
+    matchLabels:
+      app: video-processor
+
+  policyTypes:
+  - Ingress   # We are defining ingress rules (inbound traffic).
+              # Egress is not listed here, so egress remains unrestricted
+              # (Kafka and S3 outbound is controlled at the VPC security group level).
+
+  ingress:
+  # --- Rule 1: Allow api-gateway to query the video processor ---
+  # The api-gateway serves customer dashboards which display processing status.
+  # It calls video-processor HTTP endpoints directly.
+  - from:
+    - podSelector:
+        matchLabels:
+          app: api-gateway
+    ports:
+    - protocol: TCP
+      port: 8080
+
+  # --- Rule 2: Allow Prometheus to scrape metrics ---
+  # Prometheus runs in the "monitoring" namespace and scrapes /metrics on port 8080.
+  # namespaceSelector is required because Prometheus is in a different namespace.
+  # Without this, the metrics scrape would be silently dropped by the policy.
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+      podSelector:
+        matchLabels:
+          app: prometheus
+    ports:
+    - protocol: TCP
+      port: 8080
