@@ -1,3 +1,6 @@
+# Made 5 changes - Added the management cidr for extra security, added one general node group and one GPU node group, added the s3 bucket names and kubernetes version checker which will not let workloads breaks unexpectedly when AWS initiates any upgrades
+
+
 variable "aws_region" {
   description = "AWS region for deployment"
   type        = string
@@ -27,12 +30,12 @@ variable "vpc_cidr" {
 }
 
 # --- ADDED: Management CIDR ---
-# Used to restrict SSH access to the bastion host.
-# Never use 0.0.0.0/0 — only your VPN/office IP range should reach port 22.
+# it is used to restrict SSH access to the bastion host.
+# we should never use 0.0.0.0/0(unless if we intentionally want hacker to hack our system :)) only the VPN/office IP range should reach port 22.
 variable "management_cidr" {
   description = "CIDR block for management/VPN access (used to restrict SSH to bastion)"
   type        = string
-  default     = "10.100.0.0/16" # Replace with your actual VPN/office egress CIDR in production
+  default     = "10.100.0.0/16" # should be replaced with the actual VPN/office egress CIDR in production
 }
 
 # --- ADDED: General Node Group ---
@@ -64,7 +67,7 @@ variable "general_node_desired_size" {
 
 # --- ADDED: GPU Node Group ---
 # g4dn.xlarge = 1x NVIDIA T4 GPU, matches the edge device GPU for consistent inference.
-# GPU nodes are kept on-demand — spot interruptions would drop active inference sessions.
+# GPU nodes are kept on-demand and spot interruptions would drop active inference sessions.
 variable "gpu_node_instance_types" {
   description = "Instance types for the GPU inference EKS node group"
   type        = list(string)
@@ -94,23 +97,23 @@ variable "gpu_node_desired_size" {
 variable "video_chunks_bucket_name" {
   description = "S3 bucket for video chunk storage uploaded from edge devices"
   type        = string
-  default     = "vlt-video-chunks-prod"
+  default     = "volt-video-chunks-prod"
 }
 
 variable "model_artifacts_bucket_name" {
   description = "S3 bucket for AI model artifacts"
   type        = string
-  default     = "vlt-model-artifacts-prod"
+  default     = "volt-model-artifacts-prod"
 }
 
 variable "logs_bucket_name" {
   description = "S3 bucket for application and infrastructure logs"
   type        = string
-  default     = "vlt-logs-prod"
+  default     = "volt-logs-prod"
 }
 
 # --- ADDED: Kubernetes version ---
-# Pin the version explicitly — never let it float. Upgrades should be planned and tested.
+# Pinned the version explicitly and never let it float. Upgrades should be planned and tested.
 variable "kubernetes_version" {
   description = "Kubernetes version for the EKS cluster"
   type        = string

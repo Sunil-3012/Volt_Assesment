@@ -4,6 +4,8 @@
 # The infrastructure should create a production-grade VPC with
 # public and private subnets across 2 AZs.
 
+## I have fixed three errors which were in Nat_Gateway, public_subnet, SSH.
+
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
@@ -87,7 +89,7 @@ resource "aws_eip" "nat" {
 
 resource "aws_nat_gateway" "main" {
   allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public_a.id  # FIX: NAT Gateway must live in a public subnet
+  subnet_id     = aws_subnet.public_a.id  # Fixed the NAT Gateway which must be in a public subnet
 
   depends_on = [aws_internet_gateway.main]  # ensure IGW exists before NAT is created
 
@@ -128,12 +130,12 @@ resource "aws_route_table" "private" {
 
 resource "aws_route_table_association" "public_a" {
   subnet_id      = aws_subnet.public_a.id
-  route_table_id = aws_route_table.public.id  # FIX: public subnets must use the public route table (via IGW)
+  route_table_id = aws_route_table.public.id  # Fixed the id to "aws_route_table.public.id because we must use Public route whose default route is IGW where as private routes throgh nat gateway which will loop the traffic and nothing would work"
 }
 
 resource "aws_route_table_association" "public_b" {
   subnet_id      = aws_subnet.public_b.id
-  route_table_id = aws_route_table.public.id  # FIX: public subnets must use the public route table (via IGW)
+  route_table_id = aws_route_table.public.id  # Fixed the same error as above
 }
 
 resource "aws_route_table_association" "private_a" {
@@ -159,7 +161,7 @@ resource "aws_security_group" "bastion" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [var.management_cidr]  # FIX: restrict SSH to known management CIDR only, never open to the internet
+    cidr_blocks = ["10.0.0.0/8"]  # fixed the CIDR where it was ["0.0.0.0/0"] on port 22 which can accessed by everyone and it is not good from the security pov. I have set a sample cidr ["10.0.0.0/8"] but instead it should be from the office/VPN IP range
   }
 
   egress {

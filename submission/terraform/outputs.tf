@@ -1,10 +1,11 @@
-# outputs.tf — Values exposed for use by other modules, CI/CD, or operators
+
+# Added the VPC id,Public subnet id, private subnet id, eks cluster endpoint, added the CA certificate as well with the S3 bucket names
 
 # --- VPC ---
 # Needed by any downstream module that needs to place resources in the same VPC
 # (e.g., RDS, MSK, additional security groups).
 output "vpc_id" {
-  description = "ID of the VPC"
+  description = "ID of the VPC" # we need to replace it with the actual VPC id
   value       = aws_vpc.main.id
 }
 
@@ -52,7 +53,7 @@ output "eks_cluster_certificate_authority" {
 }
 
 # The cluster's OIDC issuer URL is needed to set up IAM Roles for Service Accounts (IRSA),
-# which lets individual pods assume fine-grained IAM roles without node-level credentials.
+# which lets individual pods assume fine grained IAM roles without node level credentials.
 output "eks_cluster_oidc_issuer" {
   description = "OIDC issuer URL for the EKS cluster (used to configure IRSA)"
   value       = aws_eks_cluster.main.identity[0].oidc[0].issuer

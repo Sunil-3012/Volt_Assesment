@@ -1,4 +1,4 @@
-# main.tf — EKS Cluster and Node Groups
+# main.tf - EKS Cluster and Node Groups
 
 # =============================================================================
 # EKS CLUSTER IAM ROLE
@@ -56,7 +56,7 @@ resource "aws_eks_cluster" "main" {
       aws_subnet.private_b.id
     ]
 
-    # Attach the EKS node security group to the cluster.
+    # Attached the EKS node security group to the cluster.
     security_group_ids = [aws_security_group.eks_nodes.id]
 
     # Keep the API server endpoint private — no direct public internet access.
