@@ -1,15 +1,210 @@
-# pipeline.yaml — CI/CD Pipeline Definition
-#
-# TASK: Define a CI/CD pipeline for the video-analytics application.
-# Use GitHub Actions syntax (or clearly comment which CI system you're targeting).
-#
-# Requirements:
-#   - Build stage: compile, run unit tests
-#   - Test stage: integration tests, security scanning
-#   - Deploy to staging: push to ECR, deploy to EKS staging
-#   - Deploy to production: manual approval gate, deploy to EKS prod
-#   - Rollback mechanism on failure
-#   - Notifications on failure
-#
-# The application is a Java service built with Gradle, containerized,
-# deployed to EKS via kubectl/helm.
+# pipeline.yaml — GitHub Actions CI/CD pipeline
+# Targets: GitHub Actions
+# App: Java/Gradle video-analytics service → Docker → EKS
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: 123456789012.dkr.ecr.us-east-1.amazonaws.com
+  ECR_REPOSITORY: video-processor
+  EKS_CLUSTER_STAGING: vlt-staging
+  EKS_CLUSTER_PROD: vlt-prod
+  K8S_NAMESPACE: video-analytics
+  K8S_DEPLOYMENT: video-processor
+
+jobs:
+
+  # ── 1. BUILD ────────────────────────────────────────────────────────────────
+  build:
+    name: Build & Unit Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Build and unit test
+        run: ./gradlew build test --no-daemon
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: build/reports/tests/
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-jar
+          path: build/libs/*.jar
+
+  # ── 2. TEST (integration + security scan) ───────────────────────────────────
+  test:
+    name: Integration Tests & Security Scan
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Integration tests
+        run: ./gradlew integrationTest --no-daemon
+
+      - name: Build Docker image for scanning
+        run: docker build -t $ECR_REPOSITORY:scan-${{ github.sha }} .
+
+      - name: Run Trivy security scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ECR_REPOSITORY }}:scan-${{ github.sha }}
+          format: table
+          exit-code: '1'          # Fail pipeline on HIGH/CRITICAL CVEs
+          severity: HIGH,CRITICAL
+
+  # ── 3. PUSH TO ECR ──────────────────────────────────────────────────────────
+  push-ecr:
+    name: Build & Push to ECR
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC — no long-lived keys)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::123456789012:role/github-actions-ecr
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image tag
+        id: meta
+        run: echo "tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push image
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:${{ steps.meta.outputs.tag }} .
+          docker push  $ECR_REGISTRY/$ECR_REPOSITORY:${{ steps.meta.outputs.tag }}
+          # Also tag as latest-staging for convenience
+          docker tag   $ECR_REGISTRY/$ECR_REPOSITORY:${{ steps.meta.outputs.tag }} \
+                       $ECR_REGISTRY/$ECR_REPOSITORY:latest-staging
+          docker push  $ECR_REGISTRY/$ECR_REPOSITORY:latest-staging
+
+  # ── 4. DEPLOY TO STAGING ────────────────────────────────────────────────────
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: push-ecr
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::123456789012:role/github-actions-eks-staging
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig for staging cluster
+        run: aws eks update-kubeconfig --name $EKS_CLUSTER_STAGING --region $AWS_REGION
+
+      - name: Deploy to staging
+        run: |
+          python3 submission/cicd/deploy.py deploy \
+            --environment staging \
+            --image-tag ${{ needs.push-ecr.outputs.image-tag }}
+
+      - name: Rollback staging on failure
+        if: failure()
+        run: |
+          python3 submission/cicd/deploy.py rollback --environment staging
+          echo "::error::Staging deploy failed — rolled back to previous revision"
+
+  # ── 5. PRODUCTION APPROVAL GATE ─────────────────────────────────────────────
+  # Requires a human reviewer in the GitHub 'production' environment settings.
+  # Go to Settings → Environments → production → Required reviewers.
+  approve-production:
+    name: Approve Production Deployment
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    environment: production    # <— GitHub pauses here and waits for a reviewer
+    steps:
+      - name: Approval granted
+        run: echo "Production deployment approved by ${{ github.actor }}"
+
+  # ── 6. DEPLOY TO PRODUCTION ─────────────────────────────────────────────────
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [push-ecr, approve-production]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::123456789012:role/github-actions-eks-prod
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig for production cluster
+        run: aws eks update-kubeconfig --name $EKS_CLUSTER_PROD --region $AWS_REGION
+
+      - name: Deploy to production
+        run: |
+          python3 submission/cicd/deploy.py deploy \
+            --environment production \
+            --image-tag ${{ needs.push-ecr.outputs.image-tag }}
+
+      - name: Rollback production on failure
+        if: failure()
+        run: |
+          python3 submission/cicd/deploy.py rollback --environment production
+          echo "::error::Production deploy failed — rolled back automatically"
+
+  # ── 7. NOTIFY ON FAILURE ────────────────────────────────────────────────────
+  notify-failure:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    needs: [build, test, push-ecr, deploy-staging, deploy-production]
+    if: failure()
+    steps:
+      - name: Send Slack alert
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": ":red_circle: *Pipeline failed* on `${{ github.ref_name }}`",
+              "blocks": [{
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": ":red_circle: *CI/CD failure* | Repo: `${{ github.repository }}` | Branch: `${{ github.ref_name }}` | Commit: `${{ github.sha }}` | <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>"
+                }
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
