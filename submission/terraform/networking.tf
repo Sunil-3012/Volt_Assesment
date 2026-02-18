@@ -161,7 +161,7 @@ resource "aws_security_group" "bastion" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/8"]  # fixed the CIDR where it was ["0.0.0.0/0"] on port 22 which can accessed by everyone and it is not good from the security pov. I have set a sample cidr ["10.0.0.0/8"] but instead it should be from the office/VPN IP range
+    cidr_blocks = ["10.0.0.0/8"]  # fixed the CIDR where it was ["0.0.0.0/0"] on port 22 which can accessed by everyone and it is not good from the security pov. I have set a sample cidr ["10.0.0.0/8"] but instead it should be from the office/VPN IP range.
   }
 
   egress {
