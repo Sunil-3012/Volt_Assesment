@@ -2,12 +2,12 @@
 
 ## Prerequisites
 
-- Python 3.8+ (for running the evaluator)
+- Python 3.8+ (for running the syntax checker)
 - Git
 - A text editor or IDE
 
-Optional (improves evaluation accuracy):
-- [shellcheck](https://github.com/koalaman/shellcheck) — shell script linter
+Optional:
+- [shellcheck](https://github.com/koalaman/shellcheck) — shell script linter (the syntax checker uses it if available)
 
 ## Setup
 
@@ -16,14 +16,12 @@ Optional (improves evaluation accuracy):
 git clone <your-private-repo-url>
 cd devops-interview
 
-# Install evaluation dependencies
+# Install dependencies
 pip install -r requirements.txt
 
-# Verify the evaluator works
-python -m evaluation.evaluate --submission ./submission
+# Verify the syntax checker works
+python -m check
 ```
-
-You should see a report with 0/100 points — that's expected on the empty skeletons.
 
 ## Workflow
 
@@ -31,28 +29,20 @@ You should see a report with 0/100 points — that's expected on the empty skele
 2. **Pick a module** — Work on whichever module you're strongest in first
 3. **Edit files in `submission/`** — Each file has instructions and TODOs
 4. **Reference `data/`** — Scenario data is in the `data/` directory (read-only)
-5. **Run the evaluator** — Check your progress as you go
+5. **Run the syntax checker** — Validate your files parse correctly as you go
 6. **Commit frequently** — We review git history for your approach
 
-## Evaluator Usage
+## Syntax Checker
 
 ```bash
-# Full evaluation
-python -m evaluation.evaluate --submission ./submission
-
-# Single module (faster iteration)
-python -m evaluation.evaluate --submission ./submission --module terraform
-python -m evaluation.evaluate --submission ./submission --module k8s
-python -m evaluation.evaluate --submission ./submission --module network
-python -m evaluation.evaluate --submission ./submission --module cicd
-python -m evaluation.evaluate --submission ./submission --module debug
-
-# Syntax checks only (fastest)
-python -m evaluation.evaluate --submission ./submission --quick
-
-# Save report to file
-python -m evaluation.evaluate --submission ./submission --output report.json
+python -m check                      # Check all files
+python -m check --module terraform   # Check one module
+python -m check --module k8s
+python -m check --module network
+python -m check --module cicd
 ```
+
+This validates file syntax (HCL, YAML, Python, shell) but does **not** score your work. Full evaluation is done by the hiring team.
 
 ## Module Guide
 

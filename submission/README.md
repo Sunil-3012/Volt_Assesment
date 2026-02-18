@@ -15,14 +15,14 @@ Before submitting, verify:
 ## Submission Instructions
 
 1. Commit all changes to your private repository
-2. Verify the evaluator runs: `python -m evaluation.evaluate --submission ./submission`
+2. Run the syntax checker: `python -m check`
 3. Add the reviewers listed in your assessment email as collaborators
 4. Reply to the assessment email with your repository URL
 
-## Running the Evaluator
+## Syntax Checker
 
 ```bash
 # From the repo root
 pip install -r requirements.txt
-python -m evaluation.evaluate --submission ./submission
+python -m check
 ```

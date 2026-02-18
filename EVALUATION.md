@@ -2,29 +2,16 @@
 
 ## Scoring Overview
 
-Total: **100 points** across 5 modules. Automated grading uses static analysis — no cloud resources or running clusters required.
+Total: **100 points** across 5 modules. Your submission is evaluated by the hiring team after you submit.
 
-## Running the Evaluator
+## Syntax Checker
+
+You can validate that your files parse correctly before submitting:
 
 ```bash
-# Install dependencies
 pip install -r requirements.txt
-
-# Full evaluation
-python -m evaluation.evaluate --submission ./submission
-
-# Single module
-python -m evaluation.evaluate --submission ./submission --module terraform
-python -m evaluation.evaluate --submission ./submission --module k8s
-python -m evaluation.evaluate --submission ./submission --module network
-python -m evaluation.evaluate --submission ./submission --module cicd
-python -m evaluation.evaluate --submission ./submission --module debug
-
-# Syntax checks only (fast)
-python -m evaluation.evaluate --submission ./submission --quick
-
-# JSON report output
-python -m evaluation.evaluate --submission ./submission --output report.json
+python -m check                      # Check all files
+python -m check --module terraform   # Check one module
 ```
 
 ## Module 1: Infrastructure-as-Code / Terraform (25 pts)

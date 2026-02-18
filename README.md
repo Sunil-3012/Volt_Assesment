@@ -30,16 +30,19 @@ The assessment consists of **5 modules** (100 points total):
 4. Work through modules in `submission/` — each file has instructions and TODOs
 5. Reference data in `data/` as needed (read-only, do not modify)
 
-## Evaluation
+## Syntax Checker
 
-Your submission is graded automatically:
+A syntax checker is included so you can validate your files before submitting:
 
 ```bash
 pip install -r requirements.txt
-python -m evaluation.evaluate --submission ./submission
+python -m check                      # Check all files
+python -m check --module terraform   # Check one module
 ```
 
-See `EVALUATION.md` for the full scoring rubric, weights, and thresholds.
+This verifies your files parse correctly (HCL, YAML, Python, shell). It does **not** score your work — full evaluation is done by the hiring team.
+
+See `EVALUATION.md` for the scoring rubric and what we're evaluating.
 
 ## What We're Looking For
 
@@ -61,7 +64,7 @@ See `EVALUATION.md` for the full scoring rubric, weights, and thresholds.
 ## Rules
 
 - You may use any reference material, documentation, or AI tools
-- Do not modify anything in `evaluation/` or `data/`
+- Do not modify anything in `check/` or `data/`
 - All work should be in the `submission/` directory
 - Commit frequently — we review git history
 
